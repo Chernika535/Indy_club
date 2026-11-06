@@ -4,7 +4,7 @@
 
 ## Открыть сайт через GitHub Pages
 
-В репозитории откройте **Settings → Pages**. В разделе **Build and deployment** выберите **Deploy from a branch**, ветку **main**, папку **/docs** и нажмите **Save**. После первого развёртывания GitHub покажет ссылку на сайт. Для этого репозитория ожидаемый адрес — https://chernika535.github.io/Indy_club/.
+Сайт опубликован по адресу https://chernika535.github.io/Indy_club/. GitHub Pages берёт файлы из папки `/docs` в ветке `main` и обновляет сайт после коммитов в эту ветку. Настройки источника доступны в разделе **Settings → Pages**.
 
 Сайт состоит из HTML, CSS и JavaScript. Сборка, ключи API и платные сервисы для этого выпуска не нужны. На Windows можно проверить изменения локально. В PowerShell из папки репозитория выполните `py -m http.server 8000 --directory docs` и откройте http://localhost:8000/. Команда использует Python 3.
 

@@ -23,7 +23,7 @@ function link(page, options = {}) {
   return '#' + page + (params.size ? '?' + escape(params.toString()) : '');
 }
 
-const external = (url, label) => `<a class="primary" href="${escape(url)}" target="_blank" rel="noopener noreferrer">${label} <span aria-hidden="true">↗</span></a>`;
+const external = (url, label) => `<a class="primary" href="${escape(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 const art = world => `<svg viewBox="0 0 128 128" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">${symbols[world.id]}</svg>`;
 const orb = world => `<div class="orb ${world.id}" style="--tone:${world.color}">${art(world)}</div>`;
 const portal = world => `<a class="portal" href="${link('vibe', {id:world.id})}" style="--tone:${world.color}">${orb(world)}<span>${world.name}</span></a>`;
@@ -69,14 +69,14 @@ const cards = (rows, render, empty = 'По этому запросу пока н
   ? `<div class="card-grid">${rows.map(render).join('')}</div>` : `<p class="empty">${empty}</p>`;
 const section = (title, content, aside = '') => `<section class="wrap section"><div class="section-head"><h2>${title}</h2>${aside}</div>${content}</section>`;
 const heading = (kicker, title, description = '') => `<div class="wrap page-intro"><span class="eyebrow">${kicker}</span><h1>${escape(title)}</h1>${description ? `<p class="lead">${escape(description)}</p>` : ''}</div>`;
-const hiddenNote = count => count ? `<p class="hint" role="status">Скрыто по исключениям: ${count}. <a class="textlink" href="#taste">Настроить вкус ↗</a></p>` : '';
+const hiddenNote = count => count ? `<p class="hint" role="status">Скрыто по исключениям: ${count}. <a class="textlink" href="#taste">Настроить вкус</a></p>` : '';
 
 function searchForm(query = '', tab = 'all') {
   return `<form class="search" data-form="search" role="search">
     <label for="query" class="sr-only">Что хочешь найти?</label>
     <input name="q" id="query" type="search" maxlength="140" placeholder="Хочу найти…" value="${escape(query)}">
     <input name="tab" type="hidden" value="${tab}">
-    <button class="primary" type="submit">Найти <span aria-hidden="true">↗</span></button>
+    <button class="primary" type="submit">Найти</button>
   </form>`;
 }
 
@@ -85,10 +85,10 @@ function home() {
   return `<div class="wrap hero"><span class="eyebrow">Инди Клуб · Вход открыт</span><h1>Куда тебе <em>сегодня?</em></h1>
     <p class="lead">Найди независимую игру, зин или автора, с которого начнётся новое увлечение.</p>
     ${searchForm()}
-    <p class="hint">Попробуй <a class="textlink" href="${link('explore',{q:'игра про фольклор без демонов'})}">«игра про фольклор без демонов»</a> или <a class="textlink" href="#taste">начни со знакомой истории ↗</a></p>
+    <p class="hint">Попробуй <a class="textlink" href="${link('explore',{q:'игра про фольклор без демонов'})}">«игра про фольклор без демонов»</a> или <a class="textlink" href="#taste">начни со знакомой истории</a></p>
   </div>
   ${section('Миры клуба', `<div class="portals">${vibes.map(portal).join('')}</div>`, '<p class="hint">Шесть входов в каталог</p>')}
-  ${section('С чего начать', cards(picks, workCard), '<a class="textlink hint" href="#explore">Весь каталог ↗</a>')}
+  ${section('С чего начать', cards(picks, workCard), '<a class="textlink hint" href="#explore">Весь каталог</a>')}
   ${section('Маршруты клуба', `<div class="route-grid">${routes.map(routeCard).join('')}</div>`)}`;
 }
 
