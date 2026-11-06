@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#151421">
+  <meta name="description" content="Инди Клуб — независимые работы, их авторы и миры, которые их связывают.">
+  <title>Инди Клуб</title>
+  <link rel="icon" href="./portal.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#content">Перейти к содержанию</a>
+  <aside class="rail">
+    <a class="brand" href="#home"><img src="./portal.svg" width="40" height="40" alt=""><span>ИНДИ<br>КЛУБ</span></a>
+    <nav aria-label="Навигация клуба">
+      <a href="#home" data-nav="home"><span aria-hidden="true">⌂</span>Домой</a>
+      <a href="#explore" data-nav="explore"><span aria-hidden="true">◉</span>Исследовать</a>
+      <a href="#taste" data-nav="taste"><span aria-hidden="true">◇</span>Мой вкус</a>
+      <a href="#saved" data-nav="saved"><span aria-hidden="true">▤</span>Моё</a>
+    </nav>
+    <div class="rail-note">НЕЗАВИСИМАЯ<br>КУЛЬТУРА</div>
+  </aside>
+  <div class="shell">
+    <header class="masthead"><span>АТЛАС НЕЗАВИСИМОЙ КУЛЬТУРЫ</span><a href="#explore">Поиск по клубу <span aria-hidden="true">↗</span></a></header>
+    <main id="content" tabindex="-1"><noscript>Для поиска и сохранений включите JavaScript в браузере.</noscript></main>
+    <footer class="foot"><span>Инди Клуб</span><span>Пробный выпуск · 01</span></footer>
+  </div>
+  <div class="sr-only" id="status" role="status"></div>
+</body>
+</html>
