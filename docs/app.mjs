@@ -1,3 +1,5 @@
+import {createAccount} from './account.mjs';
+import {exhibits, scene} from './exhibits.mjs';
 import {people, references, routes, types, vibes, works} from './catalog.mjs';
 import {exclusionOptions, matchPeople, normalize, person, rankWorks, readState, vibe, work, writeState} from './discovery.mjs';
 
@@ -25,14 +27,19 @@ function link(page, options = {}) {
 
 const external = (url, label) => `<a class="primary" href="${escape(url)}" target="_blank" rel="noopener noreferrer">${label}</a>`;
 const art = world => `<svg viewBox="0 0 128 128" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round">${symbols[world.id]}</svg>`;
-const orb = world => `<div class="orb ${world.id}" style="--tone:${world.color}">${art(world)}</div>`;
-const portal = world => `<a class="portal" href="${link('vibe', {id:world.id})}" style="--tone:${world.color}">${orb(world)}<span>${world.name}</span></a>`;
+const portal = world => {
+  const exhibit = exhibits[world.id];
+  return `<a class="gallery-tile" href="${link('vibe', {id:world.id})}" aria-label="${world.name}">
+    <div class="gallery-art">${scene(world.id)}<span class="tile-disc" aria-hidden="true">${exhibit.no}</span></div>
+    <span class="tile-caption"><strong>${world.name}</strong><small>${exhibit.label}</small></span>
+  </a>`;
+};
 const tags = values => `<div class="tags">${values.map(value => `<a class="tag" href="${link('explore', {q:value})}">${escape(value)}</a>`).join('')}</div>`;
 const worldTags = values => `<div class="tags">${values.map(id => `<a class="tag" href="${link('vibe', {id})}">${vibe(id).name}</a>`).join('')}</div>`;
 
 function saveButton(kind, item) {
   const key = kind + ':' + item.id;
-  const saved = state.saved.includes(key);
+  const saved = activeSaves().includes(key);
   return `<button class="button" type="button" data-save="${key}" aria-pressed="${saved}" aria-label="Сохранить «${escape(item.title || item.name)}»">${saved ? 'В сохранённых' : 'Сохранить'}</button>`;
 }
 
@@ -82,17 +89,18 @@ function searchForm(query = '', tab = 'all') {
 
 function home() {
   const picks = rankWorks({exclusions:state.exclusions}).rows.filter(row => ['kupala','mendel','green-dreams'].includes(row.item.id));
-  return `<div class="wrap hero"><span class="eyebrow">Инди Клуб · Вход открыт</span><h1>Куда тебе <em>сегодня?</em></h1>
+  return `<div class="wrap hero gallery-hero"><div><span class="eyebrow">ИНДИ КЛУБ / ГАЛЕРЕЯ МИРОВ</span><h1>Куда тебе <em>сегодня?</em></h1>
     <p class="lead">Найди независимую игру, зин или автора, с которого начнётся новое увлечение.</p>
     ${searchForm()}
-    <p class="hint">Попробуй <a class="textlink" href="${link('explore',{q:'игра про фольклор без демонов'})}">«игра про фольклор без демонов»</a> или <a class="textlink" href="#taste">начни со знакомой истории</a></p>
+    <p class="hint">Попробуй <a class="textlink" href="${link('explore',{q:'игра про фольклор без демонов'})}">«игра про фольклор без демонов»</a> или <a class="textlink" href="#taste">начни со знакомой истории</a></p></div>
+    <div class="gallery-sigil" aria-hidden="true"><span>ВХОД 06/06</span></div>
   </div>
-  ${section('Миры клуба', `<div class="portals">${vibes.map(portal).join('')}</div>`, '<p class="hint">Шесть входов в каталог</p>')}
+  ${section('Выбери мир', `<div class="gallery">${vibes.map(portal).join('')}</div>`, '<p class="hint">Шесть входов в каталог</p>')}
   ${section('С чего начать', cards(picks, workCard), '<a class="textlink hint" href="#explore">Весь каталог</a>')}
   ${section('Маршруты клуба', `<div class="route-grid">${routes.map(routeCard).join('')}</div>`)}`;
 }
 
-const tabs = {all:'Всё', works:'Работы', people:'Люди', vibes:'Миры', routes:'Подборки'};
+const tabs = {all:'Всё', works:'Работы', publications:'Мысли', people:'Люди', vibes:'Миры', routes:'Подборки'};
 
 function explore(params) {
   const query = (params.get('q') || '').slice(0, 140);
@@ -101,6 +109,7 @@ function explore(params) {
   const {rows, hiddenCount, parsed} = rankWorks({query, exclusions:state.exclusions});
   const peopleRows = matchPeople(query, rows, state.exclusions);
   const shown = key => tab === 'all' || tab === key;
+  const allowed = item => allowedEntry(item, parsed.excluded);
   const visibleIds = new Set(rows.map(row => row.item.id));
   const matchesText = text => !parsed.terms.length || parsed.terms.every(term => normalize(text).includes(term));
   const visibleWorlds = vibes.filter(item => matchesText([item.name, item.title, item.description].join(' ')) || rows.some(row => row.item.worlds.includes(item.id)));
@@ -114,7 +123,8 @@ function explore(params) {
   </div>
   ${shown('works') ? section('Работы', cards(rows, workCard)) : ''}
   ${shown('people') ? section('Люди', cards(peopleRows, personCard)) : ''}
-  ${shown('vibes') && (tab === 'vibes' || visibleWorlds.length) ? section('Миры', visibleWorlds.length ? `<div class="portals">${visibleWorlds.map(portal).join('')}</div>` : '<p class="empty">Миры по запросу не найдены.</p>') : ''}
+  ${account.inExplore({tab,allowed,matchesText})}
+  ${shown('vibes') && (tab === 'vibes' || visibleWorlds.length) ? section('Миры', visibleWorlds.length ? `<div class="gallery">${visibleWorlds.map(portal).join('')}</div>` : '<p class="empty">Миры по запросу не найдены.</p>') : ''}
   ${shown('routes') && (tab === 'routes' || visibleRoutes.length) ? section('Подборки', visibleRoutes.length ? `<div class="route-grid">${visibleRoutes.map(routeCard).join('')}</div>` : '<p class="empty">Подборки по запросу не найдены.</p>') : ''}`;
 }
 
@@ -122,13 +132,22 @@ function worldPage(id) {
   const world = vibe(id);
   if (!world) return missing();
   const {rows, hiddenCount} = rankWorks({world:id, exclusions:state.exclusions});
-  const relatedWorlds = [...new Set(rows.flatMap(row => row.item.worlds))].filter(other => other !== id);
+  const exhibit = exhibits[id];
   const authors = [...new Set(rows.map(row => row.item.creator))].map(creator => ({item:person(creator)}));
-  return `<div class="world" style="--tone:${world.color}">
-    <div class="wrap page-intro world-intro"><div><span class="eyebrow">${world.name} · Мир клуба</span><h1>${world.title}</h1><p class="lead">${world.description}</p>${hiddenNote(hiddenCount)}</div>${orb(world)}</div>
-    ${section('Работы этого мира', cards(rows, workCard))}
-    ${authors.length ? section('Кого здесь встретить', cards(authors, personCard)) : ''}
-    ${relatedWorlds.length ? section('Соседние миры', worldTags(relatedWorlds)) : ''}
+  return `<div class="world-stage ${exhibit.layout}">
+    <div class="wrap stage-top"><a href="#home">К галерее</a><span>${exhibit.index}</span></div>
+    <div class="wrap stage-scene">
+      <div class="stage-image">${scene(id)}</div>
+      <div class="stage-copy"><span class="eyebrow">${world.name} / ${exhibit.label}</span><h1>${exhibit.title}</h1>
+      <p class="lead">${exhibit.line}</p>
+      <button class="primary" type="button" data-enter-world>${exhibit.action}</button></div>
+    </div>
+    <div class="stage-shelf" id="exhibit" tabindex="-1">${section(exhibit.shelf, hiddenNote(hiddenCount) + cards(rows, workCard), '<span class="gallery-note">' + exhibit.index + '</span>')}</div>
+    ${account.inWorld(id, allowedEntry)}
+    ${authors.length ? section(exhibit.people, cards(authors, personCard)) : ''}
+    <nav class="wrap world-index" aria-label="Переход между мирами">
+    ${vibes.map(item => `<a href="${link('vibe',{id:item.id})}" ${item.id === id ? 'aria-current="page"' : ''}>${item.name}</a>`).join('')}
+    </nav>
   </div>`;
 }
 
@@ -186,11 +205,14 @@ function taste(params) {
 }
 
 function savedPage() {
-  const savedWorks = works.filter(item => state.saved.includes('work:' + item.id)).map(item => ({item}));
-  const savedPeople = people.filter(item => state.saved.includes('person:' + item.id)).map(item => ({item}));
-  return heading('Личный архив', 'Моё', 'Сохранённые работы и авторы доступны в этом браузере.') +
+  const keys = activeSaves();
+  const savedWorks = works.filter(item => keys.includes('work:' + item.id)).map(item => ({item}));
+  const savedPeople = people.filter(item => keys.includes('person:' + item.id)).map(item => ({item}));
+  const description = account.hasUser() ? 'Сохранения этого аккаунта.' : 'Сохранённые работы и авторы доступны в этом браузере.';
+  return heading('Личный архив', 'Моё', description) +
     section('Работы', cards(savedWorks, workCard, 'Здесь появятся работы, которые ты сохранишь.')) +
-    section('Люди', cards(savedPeople, personCard, 'Здесь появятся авторы, которых ты сохранишь.'));
+    section('Люди', cards(savedPeople, personCard, 'Здесь появятся авторы, которых ты сохранишь.')) +
+    account.savedContent(keys);
 }
 
 function missing() {
@@ -208,6 +230,8 @@ function render({focus = false} = {}) {
   const pages = {
     home, explore:() => explore(params), vibe:() => worldPage(id), work:() => workPage(id),
     person:() => personPage(id), route:() => routePage(id), taste:() => taste(params), saved:savedPage,
+    account:() => account.accountPage(params), studio:() => account.studioPage(params),
+    member:() => account.memberPage(id), entry:() => account.entryPage(id),
   };
   main.innerHTML = Object.hasOwn(pages, page) ? pages[page]() : missing();
   const title = main.querySelector('h1')?.textContent;
@@ -237,14 +261,27 @@ document.querySelector('.skip').addEventListener('click', event => {
   main.focus();
 });
 
-main.addEventListener('click', event => {
+main.addEventListener('click', async event => {
+  if (event.target.closest('[data-enter-world]')) {
+    const exhibit = main.querySelector('#exhibit');
+    exhibit.focus({preventScroll:true});
+    exhibit.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
+    return;
+  }
   const button = event.target.closest('[data-save]');
   if (!button) return;
   const key = button.dataset.save;
-  const saved = state.saved.includes(key);
-  state.saved = saved ? state.saved.filter(id => id !== key) : [...state.saved, key];
-  const persisted = writeState(state);
-  status.textContent = persisted ? (saved ? 'Удалено из сохранённых.' : 'Добавлено в сохранённые.') : 'Браузер не сохранил изменение. Оно действует до перезагрузки.';
+  const saved = activeSaves().includes(key);
+  if (account.hasUser()) {
+    button.disabled = true;
+    const changed = await account.toggleSaved(key);
+    button.disabled = false;
+    if (!changed) return;
+  } else {
+    state.saved = saved ? state.saved.filter(id => id !== key) : [...state.saved, key];
+    const persisted = writeState(state);
+    status.textContent = persisted ? (saved ? 'Удалено из сохранённых.' : 'Добавлено в сохранённые.') : 'Браузер не сохранил изменение. Оно действует до перезагрузки.';
+  }
   if (current().page === 'saved') {
     render();
     main.focus({preventScroll:true});
@@ -266,6 +303,7 @@ main.addEventListener('change', event => {
 
 main.addEventListener('submit', event => {
   const form = event.target;
+  if (form.dataset.accountForm) return account.submit(event);
   if (!form.dataset.form) return;
   event.preventDefault();
   const values = new FormData(form);
@@ -282,4 +320,15 @@ main.addEventListener('submit', event => {
   }
 });
 
+function allowedEntry(item, excluded = []) {
+  const hidden = new Set([...excluded, ...Object.keys(state.exclusions).filter(tag => state.exclusions[tag] === 'hard')].map(normalize));
+  return !item.topics.split(',').map(normalize).some(tag => hidden.has(tag));
+}
+
+const account = createAccount({
+  root:main, escape, section, heading, link, saveButton, getPage:current, render,
+  announce:text => {status.textContent = text;},
+});
+const activeSaves = () => account.hasUser() ? account.saved() : state.saved;
 render();
+void account.init();
